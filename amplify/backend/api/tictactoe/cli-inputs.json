@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "serviceConfiguration": {
+    "apiName": "tictactoe",
+    "serviceName": "AppSync",
+    "gqlSchemaPath": "/Users/danielboza/Documents/Projects/react-native-aws-course/amplify/backend/api/tictactoe/schema.graphql",
+    "defaultAuthType": {
+      "mode": "API_KEY",
+      "expirationTime": 60,
+      "apiKeyExpirationDate": "2023-05-07T17:43:38.533Z",
+      "keyDescription": "test"
+    },
+    "conflictResolution": {},
+    "additionalAuthTypes": [
+      {
+        "mode": "AWS_IAM"
+      }
+    ]
+  }
+}
