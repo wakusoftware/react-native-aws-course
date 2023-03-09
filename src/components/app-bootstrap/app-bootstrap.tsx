@@ -1,20 +1,19 @@
-import * as SplashScreen from "expo-splash-screen";
-import * as Font from "expo-font";
-import { Inter_900Black } from "@expo-google-fonts/inter";
+import React, {
+  ReactElement,
+  ReactNode,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 import {
-  useFonts,
   DeliusUnicase_400Regular,
   DeliusUnicase_700Bold,
 } from "@expo-google-fonts/delius-unicase";
-import {
-  ReactElement,
-  ReactNode,
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
-import { StyleSheet, View } from "react-native";
-import { Text } from "@components";
+import { Auth, Hub } from "aws-amplify";
+import * as SplashScreen from "expo-splash-screen";
+import * as Font from "expo-font";
+import { useAuth } from "@contexts/auth-context";
+import { View } from "react-native";
 
 type AppBootstrapProps = {
   children: ReactNode;
@@ -23,7 +22,9 @@ type AppBootstrapProps = {
 export default function AppBootstrap({
   children,
 }: AppBootstrapProps): ReactElement {
+  const [authLoaded, setAuthLoaded] = useState(false);
   const [appIsReady, setAppIsReady] = useState(false);
+  const { setUser } = useAuth();
 
   useEffect(() => {
     (async () => {
@@ -41,14 +42,51 @@ export default function AppBootstrap({
     })();
   }, []);
 
+  useEffect(() => {
+    async function checkCurrentUser() {
+      try {
+        const user = await Auth.currentAuthenticatedUser();
+        setUser(user);
+      } catch (error) {
+        setUser(null);
+      }
+      setAuthLoaded(true);
+    }
+
+    checkCurrentUser();
+
+    function hubListener(hubData: any) {
+      const { data, event } = hubData.payload;
+      switch (event) {
+        case "signOut":
+          setUser(null);
+          break;
+        case "signIn":
+          setUser(data);
+          break;
+        default:
+          break;
+      }
+    }
+
+    Hub.listen("auth", hubListener);
+
+    return () => {
+      Hub.remove("auth", hubListener);
+    };
+  }, []);
+
   const onLayout = useCallback(() => {
     if (appIsReady) {
       SplashScreen.hideAsync();
     }
   }, [appIsReady]);
 
-  if (!appIsReady) {
-    return <></>;
-  }
-  return <View onLayout={onLayout}>{children}</View>;
+  return appIsReady && authLoaded ? (
+    <View style={{ flex: 1 }} onLayout={onLayout}>
+      {children}
+    </View>
+  ) : (
+    <></>
+  );
 }
